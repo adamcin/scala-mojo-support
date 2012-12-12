@@ -2,7 +2,12 @@ package org.scala_tools.maven.mojo.extractor
 
 import org.apache.maven.plugin.descriptor.MojoDescriptor
 import org.apache.maven.plugin.descriptor.Parameter
-import org.scala_tools.maven.mojo.annotations._;
+import org.scala_tools.maven.mojo.annotations._
+import org.apache.maven.tools.plugin.ExtendedMojoDescriptor
+import org.apache.maven.project.MavenProject
+import org.apache.maven.execution.MavenSession
+import org.codehaus.plexus.component.repository.ComponentRequirement
+;
 
 
 /**
@@ -10,7 +15,7 @@ import org.scala_tools.maven.mojo.annotations._;
  */
 trait MojoExtractionInfo {
   def extractMojoDescriptor(mojoInfo : MojoClassInfo) : MojoDescriptor = {
-    val desc = new MojoDescriptor()
+    val desc = new ExtendedMojoDescriptor()
     desc.setLanguage("scala");
     desc.setComponentConfigurator("scala");
     desc.setImplementation(mojoInfo.name)
@@ -52,6 +57,10 @@ trait MojoExtractionInfo {
           desc.setDescription(value)
         case since(value) =>
           desc.setSince(value)
+        case requiresDependencyCollection(value) =>
+          desc.setDependencyCollectionRequired(value)
+        case threadSafe(value) =>
+          desc.setThreadSafe(value)
         case _ => //ignore
       }
     }
@@ -69,7 +78,33 @@ trait MojoExtractionInfo {
           case defaultValue(value) => paramInfo.setDefaultValue(value)
           case alias(value) => paramInfo.setAlias(value)
           //TODO Add requirement
-//          case component =>
+          case component(role, roleHint) => {
+            if (role == classOf[MavenProject].getName) {
+              paramInfo.setImplementation(classOf[MavenProject].getName)
+              paramInfo.setDefaultValue("${project}")
+              paramInfo.setRequired(true)
+              paramInfo.setEditable(false)
+            } else if (role == classOf[MavenSession].getName) {
+              paramInfo.setImplementation(classOf[MavenSession].getName)
+              paramInfo.setDefaultValue("${session}")
+              paramInfo.setRequired(true)
+              paramInfo.setEditable(false)
+            } else {
+              val req = new ComponentRequirement
+              req.setFieldName(param.name)
+              Option(role) match {
+                case Some("") => req.setRole(param.typeClass)
+                case None => req.setRole(param.typeClass)
+                case Some(r) => req.setRole(r)
+              }
+              Option(roleHint) match {
+                case Some("") => ()
+                case None => ()
+                case Some(rh) => req.setRoleHint(roleHint)
+              }
+              desc.addRequirement(req)
+            }
+          }
           case description(value) => paramInfo.setDescription(value)
           //TODO Add deprecated support
 //          case deprecated =>

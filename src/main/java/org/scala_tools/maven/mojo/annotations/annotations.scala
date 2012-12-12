@@ -25,6 +25,8 @@ object MavenAnnotation {
       case Companion(`requiresProject`) => requiresProject(true)
       case Companion(`requiresReports`) => requiresReports(true)
       case Companion(`requiresDirectInvocation`) => requiresDirectInvocation(true)
+      case Companion(`threadSafe`) => threadSafe(true)
+      case Companion(`component`) => component()
 
       case _ => throw new UnsupportedOperationException("Annotation (%s) is not supported".format(annotation))
     }
@@ -44,7 +46,8 @@ object MavenAnnotation {
       case Companion(`requiresDependencyResolution`) => requiresDependencyResolution(value)
       case Companion(`description`) => description(value)
       case Companion(`since`) => since(value)
-      case Companion(`component`) => component(value, None)
+      case Companion(`component`) => component(value)
+      case Companion(`requiresDependencyCollection`) => requiresDependencyCollection(value)
 
       case _ => throw new UnsupportedOperationException("Annotation (%s) is not supported".format(annotation))
     }
@@ -57,6 +60,7 @@ object MavenAnnotation {
       case Companion(`requiresProject`) => requiresProject(value)
       case Companion(`requiresReports`) => requiresReports(value)
       case Companion(`requiresDirectInvocation`) => requiresDirectInvocation(value)
+      case Companion(`threadSafe`) => threadSafe(value)
 
       case _ => throw new UnsupportedOperationException("Annotation (%s) is not supported".format(annotation))
     }
@@ -65,6 +69,7 @@ object MavenAnnotation {
   def apply(annotation: String, value1: String, value2: String): MavenAnnotation = {
     annotation match {
       case Companion(`executePhaseInLifecycle`) => executePhaseInLifecycle(value1, value2)
+      case Companion(`component`) => component(value1, value2)
 
       case _ => throw new UnsupportedOperationException("Annotation (%s) is not supported".format(annotation))
     }
@@ -72,7 +77,7 @@ object MavenAnnotation {
 
   def apply(annotation: String, value1: String, value2: Option[String]): MavenAnnotation = {
     annotation match {
-      case Companion(`component`) => component(value1, value2)
+      case Companion(`component`) => component(value1, value2.getOrElse(""))
 
       case _ => throw new UnsupportedOperationException("Annotation (%s) is not supported".format(annotation))
     }
@@ -99,7 +104,7 @@ case class expression(value : String) extends MavenAnnotation
 case class alias(value : String) extends MavenAnnotation
 
 /** Injects a plexus component */
-case class component(role : String, roleHint : Option[String]) extends MavenAnnotation
+case class component(role : String = "", roleHint : String = "") extends MavenAnnotation
 
 /** Default value for a parameter */
 case class defaultValue(value : String) extends MavenAnnotation
@@ -139,5 +144,8 @@ case class requiresOnline(value : Boolean) extends MavenAnnotation
 case class requiresProject(value : Boolean = true) extends MavenAnnotation
 case class requiresReports(value : Boolean) extends MavenAnnotation
 case class requiresDirectInvocation(value : Boolean) extends MavenAnnotation
+
+case class requiresDependencyCollection(scope : String) extends MavenAnnotation
+case class threadSafe(value : Boolean) extends MavenAnnotation
 
 
